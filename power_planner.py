@@ -539,6 +539,11 @@ class MatplotlibWidget(QMainWindow):
         # 운전점 데이터를 읽어 표로로 나타낸다.
         file_path = "./data/" +  customer_no_rpt + "_" + str(search_year_rpt) + "_" + "monthly_price.csv"
         data = pd.read_csv(file_path, encoding='euc-kr', dayfirst=True, parse_dates=[0])
+        data['계약전력(kW)'] = data['계약전력(kW)'].apply(lambda x: f'{int(x):,}' if pd.notna(x) and isinstance(x, (int, float)) else x) # 1000단위마다 쉽표 넣어줌
+        data['요금적용전력(kW)'] = data['요금적용전력(kW)'].apply(lambda x: f'{int(x):,}' if pd.notna(x) and isinstance(x, (int, float)) else x) # 1000단위마다 쉽표 넣어줌
+        data['사용전력량(kWh)'] = data['사용전력량(kWh)'].apply(lambda x: f'{int(x):,}' if pd.notna(x) and isinstance(x, (int, float)) else x) # 1000단위마다 쉽표 넣어줌
+        data['전기요금(원)'] = data['전기요금(원)'].apply(lambda x: f'{int(x):,}' if pd.notna(x) and isinstance(x, (int, float)) else x) # 1000단위마다 쉽표 넣어줌
+        data = data.fillna('-')         # nan 을 - 으로 변경
         # 운전점 자료를 리스트 형태로 data에 저장한다.
         data = data.values.tolist()
 
@@ -558,13 +563,13 @@ class MatplotlibWidget(QMainWindow):
         row[2].text = '요금적용전력(kW)'
         row[3].text = '사용전력량(kWh)'
         row[4].text = '전기요금(원)'
-        row[5].text = '평균전기단가(원/kwh)'
+        row[5].text = '평균단가(원/kwh)'
 
         # 가운데 정렬
         for cell in row:
             cell.paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
         
-        print(data)
+        #print(data)
 
         # 테이블의 행을 순차적으로 List에서 읽어와 추가한다.
         for _, data_1, data_2, data_3, data_4, data_5, data_6  in data:
@@ -591,12 +596,11 @@ class MatplotlibWidget(QMainWindow):
 
         # 각 열의 너비 설정
         # 각 열에 대해 셀의 너비를 설정합니다.
-        table.columns[0].width = Cm(3)  
+        table.columns[0].width = Cm(1)  
         table.columns[1].width = Cm(2)  
         table.columns[2].width = Cm(2)  
         table.columns[3].width = Cm(2)  
         table.columns[4].width = Cm(2) 
-        table.columns[5].width = Cm(2) 
         table.columns[5].width = Cm(2) 
 
         # 테이블의 글자 크기 변경
@@ -618,7 +622,7 @@ class MatplotlibWidget(QMainWindow):
         article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         article.paragraph_format.line_spacing = 1.1
         article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
-        article_s = article.add_run('5. Note ')
+        article_s = article.add_run('4. Note ')
         article_s.bold = False
         article_s.font.name = 'NanumGothicCoding'
         article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
@@ -872,6 +876,7 @@ class MatplotlibWidget(QMainWindow):
         # 2. 메인화면 우측에 년간 전력사용현황 입력
         # 2.1 평균값을 계산하기 위하여 기술통계값을 계산
         desc=data_pday_graph.describe()
+        #print(desc)
         # 2.2 오른쪽 년간 전력사용현황에 값을 입력
         self.contract_kind_scr.setText(str(contract_kind))
         self.contract_capa_scr.setText(str(contract_capa[0:-2]))
@@ -1415,22 +1420,20 @@ class MatplotlibWidget(QMainWindow):
 
         html = browser.page_source
         data = pd.read_html(html, header=0)
-        print("data_1",data[1])
-        print("data_2",data[2])
-        print("data_3",data[3])
-        print("data_4",data[4])
+        #print("data_1",data[1])
+        #print("data_2",data[2])
+        #print("data_3",data[3])
+        #print("data_4",data[4])
 
         # 추출한 대이터를 정렬한다. 
         data_month_price_raw = data[3]
         data_mprice = data_month_price_raw
         
         # 3. 스크래핑한데이터를 정리(Data Mining)한다.
-        print(data_mprice)
+        #print(data_mprice)
         data_mprice.columns = ["년/월","계약전력(kW)","요금적용전력(kW)","사용전력량(kWh)","day","pf","pf1","전기요금(원)","others"]               # 컬럼명을 1~12월로 변경
         data_mprice.index = [1,2,3,4,5,6,7,8,9,10,11,12]  # 인덱스를 1~12월로 변경
         data_mprice = data_mprice.replace('-','NaN')                       # - 을 NaN으로 변경
-        
-        #data_mprice = data_mprice.astype({'month':"string",'contract_power':"float64",'apply_power':"float64",'use_power':"float64",'monthly_price':"float64"})                          # 데이터 타입을 float으로 변경
         data_mprice = data_mprice.apply(pd.to_numeric,errors='ignore')     # 숫자가 아닌 부분은 무시
         data_mprice = data_mprice.fillna(0)                                # NaN 부분을 0으로 변경
         data_mprice = data_mprice.drop(['day', 'pf', 'pf1','others'], axis=1)
@@ -1450,9 +1453,31 @@ class MatplotlibWidget(QMainWindow):
         }
 
         data_mprice = pd.concat([data_mprice, pd.DataFrame([new_row])], ignore_index=True)
-        #data_mprice = data_mprice.drop(data_mprice.index[-1])                # 마지막 행(합계부분)을 삭제
-        
-        print(data_mprice)
+
+        # =================================
+        # 월별 단가 1월부터 12월까지 데이터 소팅
+        # =================================
+        # 1. '년/월' 컬럼의 월 표현을 두 자리 숫자로 통일합니다. (예: '1월' -> '01월')
+        def format_month(month_str):
+            # "년/월" 칼럼의 순서를 만드는 함수
+            if month_str == '총계':
+                return month_str
+            # '1월', '2월' 등 한 자리 월에 '0'을 붙여 '01월', '02월'로 만듭니다.
+            # '10월', '11월', '12월' 등은 이미 두 자리이므로 그대로 둡니다.
+            return f"{int(month_str[:-1]):02d}월"
+
+        data_mprice['년/월'] = data_mprice['년/월'].apply(format_month)
+
+        # 2. 월 순서를 정의하는 리스트를 생성합니다. 
+        month_order = [f'{i:02d}월' for i in range(1, 13)] + ['총계']
+
+        # 3. DataFrame(data_mprice)의 '년/월' 컬럼을 Categorical 타입으로 변환하면서 정의된 순서(month_order)를 적용합니다.
+        data_mprice['년/월'] = pd.Categorical(data_mprice['년/월'], categories=month_order, ordered=True)
+
+        # 4. '년/월' 컬럼을 기준으로 DataFrame(data_mprice)을 정렬합니다.
+        data_mprice = data_mprice.sort_values('년/월').reset_index(drop=True) # 정렬 후 인덱스 초기화
+
+        #print(data_mprice)
         # 4. 최대수요량을 저장한다.
         file_name = "./data/"+ user_data_df["User ID"].iloc[0]+"_"+str(search_year)+"_monthly_price.csv"
         data_mprice.to_csv(file_name,encoding='euc-kr')
