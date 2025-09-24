@@ -525,12 +525,100 @@ class MatplotlibWidget(QMainWindow):
         article = doc.add_paragraph()
         article_s = article.add_run(' ')
 
-        # 4) Note
+        # 3.1) 계절별 발전단가 
+        article = doc.add_paragraph()
+        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        article.paragraph_format.line_spacing = 1.1
+        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
+        article_s = article.add_run('3.2 월별 사용요금 분석')
+        article_s.bold = False
+        article_s.font.name = 'NanumGothicCoding'
+        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
+        article_s.font.size = Pt(10)
+
+        # 운전점 데이터를 읽어 표로로 나타낸다.
+        file_path = "./data/" +  customer_no_rpt + "_" + str(search_year_rpt) + "_" + "monthly_price.csv"
+        data = pd.read_csv(file_path, encoding='euc-kr', dayfirst=True, parse_dates=[0])
+        # 운전점 자료를 리스트 형태로 data에 저장한다.
+        data = data.values.tolist()
+
+        # 표 추가
+        '''
+        표는 6열로 만들고 
+        행은 처음 1개행은 Heading 강제로 만들고
+        추가 행은 List에서 순차적으로 data를 읽어 추가한다. 
+        '''
+        table = doc.add_table(rows=1, cols=6)
+        table.style = doc.styles['Table Grid']
+
+        # 테이블의 헤딩(가로 제목)을 입력한다.
+        row = table.rows[0].cells
+        row[0].text = '년/월'
+        row[1].text = '계약전력(kW)'
+        row[2].text = '요금적용전력(kW)'
+        row[3].text = '사용전력량(kWh)'
+        row[4].text = '전기요금(원)'
+        row[5].text = '평균전기단가(원/kwh)'
+
+        # 가운데 정렬
+        for cell in row:
+            cell.paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        
+        print(data)
+
+        # 테이블의 행을 순차적으로 List에서 읽어와 추가한다.
+        for _, data_1, data_2, data_3, data_4, data_5, data_6  in data:
+            # Adding a row and then adding data in it.
+            row = table.add_row().cells
+            if data_1 != 0.0 :
+                row[0].text = str(data_1)  
+                row[1].text = str(data_2)
+                row[2].text = str(data_3)
+                row[3].text = str(data_4)
+                row[4].text = str(data_5)
+                row[5].text = str(data_6)
+            else :
+                row[0].text = ""  
+                row[1].text = "" 
+                row[2].text = "" 
+                row[3].text = "" 
+                row[4].text = "" 
+                row[5].text = ""
+
+            # 가운데 정렬
+            for cell in row:
+                cell.paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+        # 각 열의 너비 설정
+        # 각 열에 대해 셀의 너비를 설정합니다.
+        table.columns[0].width = Cm(3)  
+        table.columns[1].width = Cm(2)  
+        table.columns[2].width = Cm(2)  
+        table.columns[3].width = Cm(2)  
+        table.columns[4].width = Cm(2) 
+        table.columns[5].width = Cm(2) 
+        table.columns[5].width = Cm(2) 
+
+        # 테이블의 글자 크기 변경
+        for row in table.rows:
+            for cell in row.cells:
+                paragraphs = cell.paragraphs
+                paragraph = paragraphs[0]
+                run_obj = paragraph.runs
+                run = run_obj[0]
+                font = run.font
+                font.size = Pt(10)
+
+        # 한줄 삽입
+        article = doc.add_paragraph()
+        article_s = article.add_run(' ')
+
+        # 5) Note
         article = doc.add_paragraph()
         article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         article.paragraph_format.line_spacing = 1.1
         article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
-        article_s = article.add_run('4. Note ')
+        article_s = article.add_run('5. Note ')
         article_s.bold = False
         article_s.font.name = 'NanumGothicCoding'
         article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
@@ -1267,10 +1355,8 @@ class MatplotlibWidget(QMainWindow):
         #    browser.quit()
         #    return       
         
-        # 5. 브라우져 종료
-        browser.quit()
 
-        '''
+
         #==============================
         # 월별 사용요금 다운로드
         #==============================
@@ -1317,62 +1403,62 @@ class MatplotlibWidget(QMainWindow):
             pass
 
 
-        for m_i in range(1,13,1):
-            browser.find_element(By.XPATH,'//*[@id="year"]').click() # 년도 클릭
-            #browser.implicitly_wait(1)
-            browser.find_element(By.XPATH,'/html/body/div[2]/div[3]/div[2]/div/form/select/option['+str(y_i)+']').click() # 년도 클릭
-
-            browser.find_element(By.XPATH,'//*[@id="txt"]/div[2]/p/span[1]/a/img').click() #  조희 클릭
-
-            # 브라우져가 작동할 시간을 강제적으로 5초정도 준다.
-            time.sleep(5)
-
-            html = browser.page_source
-            data = pd.read_html(html, header=0)
-            print("data_1",data[1])
-            print("data_2",data[2])
-            print("data_3",data[3])
-            print("data_4",data[4])
-        '''
         
-        '''
-            # 추출한 대이터를 정렬한다.
-            if (m_i == 1) :
-                data_15_pday_raw = data[4]
-                data_15_pday_1 =data_15_pday_raw.iloc[:,[1]]
-                data_15_pday_1.columns = ['peak'] 
-                data_15_pday_2 = data_15_pday_raw.iloc[:,[5]]
-                data_15_pday_2.columns = ['peak'] 
-                data_pday = pd.concat([data_15_pday_1, data_15_pday_2], axis=0, ignore_index = True)
-            else :
-                data_15_pday_raw = data[4]
-                data_15_pday_1 =data_15_pday_raw.iloc[:,[1]]
-                data_15_pday_1.columns = ['peak'] 
-                data_15_pday_2 = data_15_pday_raw.iloc[:,[5]]
-                data_15_pday_2.columns = ['peak'] 
-                data_pday_temp = pd.concat([data_15_pday_1, data_15_pday_2], axis=0, ignore_index = True)
-                data_pday = pd.concat([data_pday, data_pday_temp], axis=1, ignore_index = True)
+        browser.find_element(By.XPATH,'//*[@id="year"]').click() # 년도 클릭
+        #browser.implicitly_wait(1)
+        browser.find_element(By.XPATH,'/html/body/div[2]/div[3]/div[2]/div/form/select/option['+str(y_i)+']').click() # 년도 클릭
 
+        browser.find_element(By.XPATH,'//*[@id="txt"]/div[2]/p/span[1]/a/img').click() #  조희 클릭
+
+        # 브라우져가 작동할 시간을 강제적으로 5초정도 준다.
+        time.sleep(5)
+
+        html = browser.page_source
+        data = pd.read_html(html, header=0)
+        print("data_1",data[1])
+        print("data_2",data[2])
+        print("data_3",data[3])
+        print("data_4",data[4])
+
+        # 추출한 대이터를 정렬한다. 
+        data_month_price_raw = data[3]
+        data_mprice = data_month_price_raw
+        
         # 3. 스크래핑한데이터를 정리(Data Mining)한다.
-        #print(data_pday)
-        data_pday = data_pday.replace('-','NaN')                       # - 을 NaN으로 변경
-        data_pday = data_pday.astype('float')                          # 데이터 타입을 float으로 변경
-        data_pday = data_pday.apply(pd.to_numeric,errors='ignore')     # 숫자가 아닌 부분은 무시
-        data_pday = data_pday.fillna(0)                                # NaN 부분을 0으로 변경
-        data_pday = data_pday.drop(data_pday.index[-1])                # 마지막 행(합계부분)을 삭제
-        data_pday.columns = [1,2,3,4,5,6,7,8,9,10,11,12]               # 컬럼명을 1~12월로 변경
-        data_pday.index = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]  # 인덱스를 1~31일로 변경
-
-        # 4. 최대수요량을 저장한다.
-        file_name = "./data/"+ user_data_df["User ID"].iloc[0]+"_"+str(search_year)+"_max_power_daily.csv"
-        data_pday.to_csv(file_name,encoding='euc-kr')
+        print(data_mprice)
+        data_mprice.columns = ["년/월","계약전력(kW)","요금적용전력(kW)","사용전력량(kWh)","day","pf","pf1","전기요금(원)","others"]               # 컬럼명을 1~12월로 변경
+        data_mprice.index = [1,2,3,4,5,6,7,8,9,10,11,12]  # 인덱스를 1~12월로 변경
+        data_mprice = data_mprice.replace('-','NaN')                       # - 을 NaN으로 변경
         
-        '''
+        #data_mprice = data_mprice.astype({'month':"string",'contract_power':"float64",'apply_power':"float64",'use_power':"float64",'monthly_price':"float64"})                          # 데이터 타입을 float으로 변경
+        data_mprice = data_mprice.apply(pd.to_numeric,errors='ignore')     # 숫자가 아닌 부분은 무시
+        data_mprice = data_mprice.fillna(0)                                # NaN 부분을 0으로 변경
+        data_mprice = data_mprice.drop(['day', 'pf', 'pf1','others'], axis=1)
+        data_mprice['unit_price'] = (data_mprice['전기요금(원)'] / data_mprice['사용전력량(kWh)']).round(1)
+        data_mprice['년/월'] = data_mprice['년/월'].apply(lambda x: x[5:] if '년' in x and len(x) > 5 else x)
+        total_usage = data_mprice['사용전력량(kWh)'].sum()
+        total_bill = data_mprice['전기요금(원)'].sum()
+        average_unit_price = data_mprice['unit_price'].mean().round(1)
 
+        new_row = {
+            '년/월': '총계',
+            '계약전력(kW)': np.nan,        # NaN으로 표시 (총계에 의미가 없는 값)
+            '요금적용전력(kW)': np.nan,     # NaN으로 표시
+            '사용전력량(kWh)': total_usage,
+            '전기요금(원)': total_bill,
+            'unit_price': average_unit_price
+        }
 
+        data_mprice = pd.concat([data_mprice, pd.DataFrame([new_row])], ignore_index=True)
+        #data_mprice = data_mprice.drop(data_mprice.index[-1])                # 마지막 행(합계부분)을 삭제
+        
+        print(data_mprice)
+        # 4. 최대수요량을 저장한다.
+        file_name = "./data/"+ user_data_df["User ID"].iloc[0]+"_"+str(search_year)+"_monthly_price.csv"
+        data_mprice.to_csv(file_name,encoding='euc-kr')
 
-
-
+        # 5. 브라우져 종료
+        browser.quit()
 
 
 if __name__ == '__main__':
