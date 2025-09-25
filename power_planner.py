@@ -91,6 +91,7 @@ class MatplotlibWidget(QMainWindow):
         self.contract_kind = ""    # 펌프 데이터파일의 파일경로 및 이름을 저장
         self.contract_capa = None  # 계약용량
         self.peak_power = None     # 피크전력
+        self.app_peak_power = None # 요금적용전력
         self.average_power = None  # 평균전력
         self.min_power = None      # 최소기본전력
         self.gen_power = None      # 발전가능량
@@ -379,29 +380,40 @@ class MatplotlibWidget(QMainWindow):
         article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         article.paragraph_format.line_spacing = 1.1
         article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('    1) 피크전력 : ' + str(peak_power_rpt) + ' kW')
+        article_s = article.add_run('    1) 최대수요전력 : ' + str(peak_power_rpt) + ' kW')
         article_s.bold = False
         article_s.font.name = 'NanumGothicCoding'
         article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
         article_s.font.size = Pt(10) 
 
-        # 2.1-2) 평균수요 
+        # 2.1-2) 요금적용전력 
         article = doc.add_paragraph()
         article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         article.paragraph_format.line_spacing = 1.1
         article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('    2) 평균소요 : ' + str(average_power_rpt) + ' kW')
+        article_s = article.add_run('    2) 요금적용전력 : ' + str(self.app_peak_power) + ' kW')
         article_s.bold = False
         article_s.font.name = 'NanumGothicCoding'
         article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
         article_s.font.size = Pt(10) 
 
-        # 2.1-3) 최소기본 
+        # 2.1-3) 평균수요 
         article = doc.add_paragraph()
         article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         article.paragraph_format.line_spacing = 1.1
         article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('    3) 최소기본 : ' + str(min_power_rpt) + ' kW')
+        article_s = article.add_run('    3) 평균소요전력 : ' + str(average_power_rpt) + ' kW')
+        article_s.bold = False
+        article_s.font.name = 'NanumGothicCoding'
+        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
+        article_s.font.size = Pt(10) 
+
+        # 2.1-4) 최소기본 
+        article = doc.add_paragraph()
+        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        article.paragraph_format.line_spacing = 1.1
+        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
+        article_s = article.add_run('    4) 최소기본전력 : ' + str(min_power_rpt) + ' kW')
         article_s.bold = False
         article_s.font.name = 'NanumGothicCoding'
         article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
@@ -471,9 +483,9 @@ class MatplotlibWidget(QMainWindow):
         # 테이블의 헤딩을 입력한다.
         row = table.rows[0].cells
         row[0].text = '구 분'
-        row[1].text = 'SUMMER'
-        row[2].text = 'INTERMID'
-        row[3].text = 'WINTER'
+        row[1].text = '여름철'
+        row[2].text = '봄.가을철'
+        row[3].text = '겨울철'
 
         # 가운데 정렬
         for cell in row:
@@ -503,10 +515,10 @@ class MatplotlibWidget(QMainWindow):
 
         # 각 열의 너비 설정
         # 각 열에 대해 셀의 너비를 설정합니다.
-        table.columns[0].width = Cm(3)  # 운전점
-        table.columns[1].width = Cm(2)  # 유량
-        table.columns[2].width = Cm(2)  # 양정
-        table.columns[3].width = Cm(2)  # 효율
+        table.columns[0].width = Cm(4)  # 운전점
+        table.columns[1].width = Cm(3)  # 유량
+        table.columns[2].width = Cm(3)  # 양정
+        table.columns[3].width = Cm(3)  # 효율
         #table.columns[4].width = Cm(2)  # 동력
         #table.columns[5].width = Cm(2)  # 동력
         #table.columns[5].width = Cm(2)  # 비고
@@ -596,7 +608,7 @@ class MatplotlibWidget(QMainWindow):
 
         # 각 열의 너비 설정
         # 각 열에 대해 셀의 너비를 설정합니다.
-        table.columns[0].width = Cm(1)  
+        table.columns[0].width = Cm(0.5)  
         table.columns[1].width = Cm(2)  
         table.columns[2].width = Cm(2)  
         table.columns[3].width = Cm(2)  
@@ -655,10 +667,10 @@ class MatplotlibWidget(QMainWindow):
         # 2. 테이블의 첫번재 줄의 제목을 가운데 정열
 
         # 1.각 열의 크기를 설정
-        self.price_table.setColumnWidth(0, 150)  # 첫 번째 열 너비를 150px로 설정
-        self.price_table.setColumnWidth(1, 150)  # 첫 번째 열 너비를 150px로 설정
-        self.price_table.setColumnWidth(2, 150)  # 첫 번째 열 너비를 150px로 설정
-        self.price_table.setColumnWidth(3, 150)  # 첫 번째 열 너비를 100px로 설정
+        self.price_table.setColumnWidth(0, 150)   # 첫 번째 열 너비를 150px로 설정
+        self.price_table.setColumnWidth(1, 150)   # 첫 번째 열 너비를 150px로 설정
+        self.price_table.setColumnWidth(2, 150)   # 첫 번째 열 너비를 150px로 설정
+        self.price_table.setColumnWidth(3, 150)   # 첫 번째 열 너비를 100px로 설정
         #self.price_table.setColumnWidth(4, 150)  # 첫 번째 열 너비를 150px로 설정
         # 2. 가운데 정열
         
@@ -700,7 +712,7 @@ class MatplotlibWidget(QMainWindow):
         customer_name_1 = user_data_df.iloc[0:1,1:2].values[0][0]     # 고객명
         self.customer_name = customer_name_1
         #print(user_data_df)     
-        customer_no_1 = str(user_data_df.iloc[0:1,2:3].values[0][0])       # 고객번호
+        customer_no_1 = str(user_data_df.iloc[0:1,2:3].values[0][0])  # 고객번호
         self.customer_no = customer_no_1
         #print(customer_no_1)
         customer_pw_1 = user_data_df.iloc[0:1,3:4].values[0][0]       # 고객비밀번호
@@ -755,17 +767,17 @@ class MatplotlibWidget(QMainWindow):
         
         # 그래프의 x축과 y축 설정
         self.MplWidget.canvas.axes.set_xlim(0, 365 - 1)
-        self.MplWidget.canvas.axes.set_ylim(0, 5000 + 1)  # y축 범위 설정
+        self.MplWidget.canvas.axes.set_ylim(0, 5000 + 1)           # y축 범위 설정
 
         # 레전드 추가
         self.MplWidget.canvas.axes.set_xlabel('DAY')
         self.MplWidget.canvas.axes.set_ylabel('Daily Max (KW)')
-        self.MplWidget.canvas.axes.grid()                         # 그리드를 표기
+        self.MplWidget.canvas.axes.grid()                          # 그리드를 표기
 
         # 그래프 업데이트
         self.MplWidget.canvas.draw()
 
-        self.MplWidget.canvas.figure.tight_layout()  # 여백 조정
+        self.MplWidget.canvas.figure.tight_layout()                # 여백 조정
 
     def power_calculation(self):
         # 펌프의 계산하기를 클릭하면  plot_graph() 함수를 
@@ -818,6 +830,10 @@ class MatplotlibWidget(QMainWindow):
         # 2.3 일별전력 사용량 파일 
         file_name = "./data/"+customer_no+"_"+search_year+"_daily_power_use.csv"
         daily_power_use_df= pd.read_csv(file_name,encoding='euc-kr')
+        # 2.4 월별사용요금 파일 
+        file_name = "./data/"+customer_no+"_"+search_year+"_monthly_price.csv"
+        monthly_price_df= pd.read_csv(file_name,encoding='euc-kr')
+
         
         # 3. 월별 날수 정의
         month_day = [31,28,31,30,31,30,31,31,30,31,30,31]
@@ -834,7 +850,10 @@ class MatplotlibWidget(QMainWindow):
         # 5.1 계약전력 추출
         max_power = float(contract_capa[:-2])
         # 5.2 발저가능량 계산 (계약전력의 30%)
-        exp_gen = data_pday_graph.max() - max_power*0.3
+        self.app_peak_power = monthly_price_df['요금적용전력(kW)'].max()
+        exp_gen = self.app_peak_power - max_power*0.3
+
+
 
         #**********************************
         # 메인화면 데이터 입력
@@ -881,6 +900,7 @@ class MatplotlibWidget(QMainWindow):
         self.contract_kind_scr.setText(str(contract_kind))
         self.contract_capa_scr.setText(str(contract_capa[0:-2]))
         self.peak_power_scr.setText(str(round(data_pday_graph.max(),1)))
+        self.app_power_scr.setText(str(round(self.app_peak_power,1)))
         self.average_power_scr.setText(str(round(desc[1],1)))
         self.base_min_scr.setText(str(round(max_power*0.3,1)))
 
@@ -908,7 +928,7 @@ class MatplotlibWidget(QMainWindow):
         max_y = max_power *1.05
         # 2.2 그래프의 x축과 y축 설정
         self.MplWidget.canvas.axes.set_xlim(graph_start, max_x - 1)     # x축 범위 설정
-        self.MplWidget.canvas.axes.set_ylim(0, max_y)                    # y축 범위 설정
+        self.MplWidget.canvas.axes.set_ylim(0, max_y)                   # y축 범위 설정
 
         # 3. 그래프 그리기
         # 3.1 일별 최대수요 그래프 데이터 정리
@@ -923,7 +943,8 @@ class MatplotlibWidget(QMainWindow):
         self.MplWidget.canvas.axes.plot(data_pday_graph.index, data_pday_graph,color='red', linestyle="-", label='최대수요(kW)', marker='')
         # 2) 분석자료(계약전력, 피크전력, 평균수요, 최소기본전력) 직선 그리기
         self.MplWidget.canvas.axes.axhline(y=max_power, color='magenta', linestyle='--', label ="계약전력 $(%.1f$kW)" %(max_power))
-        self.MplWidget.canvas.axes.axhline(y=exp_gen+max_power*0.3, color = 'red', linestyle =':', label ="Peak 전력 $(%.1f$kW)" %(exp_gen+max_power*0.3))
+        self.MplWidget.canvas.axes.axhline(y=self.peak_power, color = 'red', linestyle =':', label ="Peak 전력 $(%.1f$kW)" %(self.peak_power))
+        self.MplWidget.canvas.axes.axhline(y=exp_gen+max_power*0.3, color = 'magenta', linestyle ='-', label ="요금적용 전력 $(%.1f$kW)" %(exp_gen+max_power*0.3))
         self.MplWidget.canvas.axes.axhline(y=desc[1], color='green', linestyle='--', label ="평균수요 $(%.1f$kW)" %(desc[1]))
         self.MplWidget.canvas.axes.axhline(y=max_power*0.3, color='blue', linestyle='--', label ="최소기본전력 $(%.1f$kW)" %(max_power*0.3))
         # 3) 주석표기
@@ -1442,6 +1463,7 @@ class MatplotlibWidget(QMainWindow):
         total_usage = data_mprice['사용전력량(kWh)'].sum()
         total_bill = data_mprice['전기요금(원)'].sum()
         average_unit_price = data_mprice['unit_price'].mean().round(1)
+
 
         new_row = {
             '년/월': '총계',
