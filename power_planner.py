@@ -344,6 +344,7 @@ class MatplotlibWidget(QMainWindow):
         article_s.font.name = 'NanumGothicCoding'
         article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
         article_s.font.size = Pt(10) 
+        
         # 한줄 삽입
         article = doc.add_paragraph()
         article_s = article.add_run(' ')
@@ -947,6 +948,16 @@ class MatplotlibWidget(QMainWindow):
         self.MplWidget.canvas.axes.axhline(y=exp_gen+max_power*0.3, color = 'magenta', linestyle ='-', label ="요금적용 전력 $(%.1f$kW)" %(exp_gen+max_power*0.3))
         self.MplWidget.canvas.axes.axhline(y=desc[1], color='green', linestyle='--', label ="평균수요 $(%.1f$kW)" %(desc[1]))
         self.MplWidget.canvas.axes.axhline(y=max_power*0.3, color='blue', linestyle='--', label ="최소기본전력 $(%.1f$kW)" %(max_power*0.3))
+        
+        boundaries = np.concatenate(([0], np.cumsum(month_day)))  # 길이 13: 0,31,60,...,366
+        month_labels = [f"                      {i}월" for i in range(1, 13)] + [""]       # 끝점(366)은 라벨 공백
+        
+        # 경계 위치에 눈금과 라벨 지정
+        self.MplWidget.canvas.axes.set_xticks(boundaries)
+        self.MplWidget.canvas.axes.set_xticklabels(month_labels)
+        self.MplWidget.canvas.axes.grid(axis='x', which='major', linestyle='--', alpha=0.5)   # Grid 그리기
+
+                
         # 3) 주석표기
         self.MplWidget.canvas.axes.text(10,max_power*0.95,c_name_text)
         self.MplWidget.canvas.axes.text(10,max_power*0.92,year_text)
@@ -956,7 +967,7 @@ class MatplotlibWidget(QMainWindow):
         self.MplWidget.canvas.axes.legend(loc='best')             # 최적위치에 Legend를 그린다.
         self.MplWidget.canvas.axes.set_xlabel('DAY')              # 가로축 Legend
         self.MplWidget.canvas.axes.set_ylabel('최대수요(KW)')      # 새로축 Legend
-        self.MplWidget.canvas.axes.grid()                         # 그리드를 표기
+        #self.MplWidget.canvas.axes.grid()                         # 그리드를 표기
         # 5) 그래프 업데이트
         self.MplWidget.canvas.draw()
 
