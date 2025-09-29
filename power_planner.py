@@ -851,7 +851,8 @@ class MatplotlibWidget(QMainWindow):
         # 5.1 계약전력 추출
         max_power = float(contract_capa[:-2])
         # 5.2 발저가능량 계산 (계약전력의 30%)
-        self.app_peak_power = monthly_price_df['요금적용전력(kW)'].max()
+        self.app_peak_power = monthly_price_df['요금적용전력(kW)'].iloc[-1]
+        
         exp_gen = self.app_peak_power - max_power*0.3
 
 
@@ -1232,84 +1233,89 @@ class MatplotlibWidget(QMainWindow):
         # 2.3 url이 loading 될 동안 잠시 기다린다 (3)
         time.sleep(5)
 
+        #try: 
 
-        try: 
+        # 2.4 가상 웹브라우져에서 년도, 월, 1일기준, 조회버튼을 xpath를 이용하여 클릭한다.
+        
+        # [참고사항]
+        # 1) 년도버튼     xpath 주소  : //*[@id="SEARCH_YEAR"]
+        # 2) 년도선택버튼 xpath 주소  : /html/body/div[2]/div[3]/div[2]/div/p[1]/select[1]/option[1]
+        # 3) 월  버튼     xpath 주소  : //*[@id="SEARCH_MONTH"]
+        try: # 마우스를 화면 좌상단 빈 곳으로 이동해 hover 해제 
+            ActionChains(browser).move_by_offset(-10000, -10000).perform() 
+            time.sleep(0.1) 
+        except Exception: 
+            pass
 
-            # 2.4 가상 웹브라우져에서 년도, 월, 1일기준, 조회버튼을 xpath를 이용하여 클릭한다.
-            
-            # [참고사항]
-            # 1) 년도버튼     xpath 주소  : //*[@id="SEARCH_YEAR"]
-            # 2) 년도선택버튼 xpath 주소  : /html/body/div[2]/div[3]/div[2]/div/p[1]/select[1]/option[1]
-            # 3) 월  버튼     xpath 주소  : //*[@id="SEARCH_MONTH"]
-            try: # 마우스를 화면 좌상단 빈 곳으로 이동해 hover 해제 
-                ActionChains(browser).move_by_offset(-10000, -10000).perform() 
-                time.sleep(0.1) 
-            except Exception: 
-                pass
+        for m_i in range(1,13,1):
+            browser.find_element(By.XPATH,'//*[@id="SEARCH_YEAR"]').click() # 년도 클릭
+            #browser.implicitly_wait(1)
+            browser.find_element(By.XPATH,'/html/body/div[2]/div[3]/div[2]/div/p[1]/select[1]/option['+str(y_i)+']').click() # 2017년 클릭
 
+            browser.find_element(By.XPATH,'//*[@id="SEARCH_MONTH"]').click() # 월 클릭
+            browser.find_element(By.XPATH,'/html/body/div[2]/div[3]/div[2]/div/p[1]/select[2]/option['+str(m_i)+']').click() # 1월 클릭
 
-            for m_i in range(1,13,1):
-                browser.find_element(By.XPATH,'//*[@id="SEARCH_YEAR"]').click() # 년도 클릭
-                #browser.implicitly_wait(1)
-                browser.find_element(By.XPATH,'/html/body/div[2]/div[3]/div[2]/div/p[1]/select[1]/option['+str(y_i)+']').click() # 2017년 클릭
+            browser.find_element(By.XPATH,'//*[@id="NEEDLE"]').click() # 1일기준 클릭 
 
-                browser.find_element(By.XPATH,'//*[@id="SEARCH_MONTH"]').click() # 월 클릭
-                browser.find_element(By.XPATH,'/html/body/div[2]/div[3]/div[2]/div/p[1]/select[2]/option['+str(m_i)+']').click() # 1월 클릭
+            browser.find_element(By.XPATH,'//*[@id="txt"]/div[2]/div/p[2]/span[1]/a/img').click() #  조희 클릭
 
-                browser.find_element(By.XPATH,'//*[@id="NEEDLE"]').click() # 1일기준 클릭 
+            # 브라우져가 작동할 시간을 강제적으로 3초정도 준다.
+            time.sleep(5)
 
-                browser.find_element(By.XPATH,'//*[@id="txt"]/div[2]/div/p[2]/span[1]/a/img').click() #  조희 클릭
+            browser.find_element(By.XPATH,'//*[@id="kW"]').click() #  최대수요량
 
-                # 브라우져가 작동할 시간을 강제적으로 3초정도 준다.
-                time.sleep(5)
+            time.sleep(5)
 
-                browser.find_element(By.XPATH,'//*[@id="kW"]').click() #  최대수요량
+            # ======================================
+            #    최대수요량 데이터 테이블 찾기
+            # ======================================
+            # 1) 브라우져를 스크래핑하여 html 변수에 저장
+            html = browser.page_source
+            # 2) 스크래핑한 데이터를 parsing한다.
+            data = pd.read_html(html, header=0)
+            # 3) 최대수요데이터를 찾는다.
+            max_power_data = None
+            for i in range(0,len(data)) :
+                #print("data_1",len(data[i]))
+                if len(data[i]) > 10 :
+                    max_power_data = data[i]
+            #print(max_power_data)
+            # ======================================
 
-                time.sleep(5)
+            # 추출한 대이터를 정렬한다.
+            if (m_i == 1) :
+                data_15_pday_raw = max_power_data      # 최대수요를 자동인식하도록 한다.
+                data_15_pday_1 =data_15_pday_raw.iloc[:,[1]]
+                data_15_pday_1.columns = ['peak'] 
+                data_15_pday_2 = data_15_pday_raw.iloc[:,[5]]
+                data_15_pday_2.columns = ['peak'] 
+                data_pday = pd.concat([data_15_pday_1, data_15_pday_2], axis=0, ignore_index = True)
+            else :
+                data_15_pday_raw = max_power_data
+                data_15_pday_1 =data_15_pday_raw.iloc[:,[1]]
+                data_15_pday_1.columns = ['peak'] 
+                data_15_pday_2 = data_15_pday_raw.iloc[:,[5]]
+                data_15_pday_2.columns = ['peak'] 
+                data_pday_temp = pd.concat([data_15_pday_1, data_15_pday_2], axis=0, ignore_index = True)
+                data_pday = pd.concat([data_pday, data_pday_temp], axis=1, ignore_index = True)
 
-                html = browser.page_source
-                data = pd.read_html(html, header=0)
-                #print("data_1",data[1])
-                #print("data_2",data[2])
-                #print("data_3",data[3])
-                #print("data_4",data[4])
-                # 20250923 홈페이지가 변경되어 리스트가 [3]에서 [4]로 변경됨
+        # 3. 스크래핑한데이터를 정리(Data Mining)한다.
+        data_pday = data_pday.replace('-','NaN')                       # - 을 NaN으로 변경
+        data_pday = data_pday.astype('float')                          # 데이터 타입을 float으로 변경
+        data_pday = data_pday.apply(pd.to_numeric,errors='ignore')     # 숫자가 아닌 부분은 무시
+        data_pday = data_pday.fillna(0)                                # NaN 부분을 0으로 변경
+        data_pday = data_pday.drop(data_pday.index[-1])                # 마지막 행(합계부분)을 삭제
+        data_pday.columns = [1,2,3,4,5,6,7,8,9,10,11,12]               # 컬럼명을 1~12월로 변경
+        data_pday.index = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]  # 인덱스를 1~31일로 변경
 
-                # 추출한 대이터를 정렬한다.
-                if (m_i == 1) :
-                    data_15_pday_raw = data[4]
-                    data_15_pday_1 =data_15_pday_raw.iloc[:,[1]]
-                    data_15_pday_1.columns = ['peak'] 
-                    data_15_pday_2 = data_15_pday_raw.iloc[:,[5]]
-                    data_15_pday_2.columns = ['peak'] 
-                    data_pday = pd.concat([data_15_pday_1, data_15_pday_2], axis=0, ignore_index = True)
-                else :
-                    data_15_pday_raw = data[4]
-                    data_15_pday_1 =data_15_pday_raw.iloc[:,[1]]
-                    data_15_pday_1.columns = ['peak'] 
-                    data_15_pday_2 = data_15_pday_raw.iloc[:,[5]]
-                    data_15_pday_2.columns = ['peak'] 
-                    data_pday_temp = pd.concat([data_15_pday_1, data_15_pday_2], axis=0, ignore_index = True)
-                    data_pday = pd.concat([data_pday, data_pday_temp], axis=1, ignore_index = True)
+        # 4. 최대수요량을 저장한다.
+        file_name = "./data/"+ user_data_df["User ID"].iloc[0]+"_"+str(search_year)+"_max_power_daily.csv"
+        data_pday.to_csv(file_name,encoding='euc-kr')
 
-            # 3. 스크래핑한데이터를 정리(Data Mining)한다.
-            #print(data_pday)
-            data_pday = data_pday.replace('-','NaN')                       # - 을 NaN으로 변경
-            data_pday = data_pday.astype('float')                          # 데이터 타입을 float으로 변경
-            data_pday = data_pday.apply(pd.to_numeric,errors='ignore')     # 숫자가 아닌 부분은 무시
-            data_pday = data_pday.fillna(0)                                # NaN 부분을 0으로 변경
-            data_pday = data_pday.drop(data_pday.index[-1])                # 마지막 행(합계부분)을 삭제
-            data_pday.columns = [1,2,3,4,5,6,7,8,9,10,11,12]               # 컬럼명을 1~12월로 변경
-            data_pday.index = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]  # 인덱스를 1~31일로 변경
-
-            # 4. 최대수요량을 저장한다.
-            file_name = "./data/"+ user_data_df["User ID"].iloc[0]+"_"+str(search_year)+"_max_power_daily.csv"
-            data_pday.to_csv(file_name,encoding='euc-kr')
-
-        except :
-            QMessageBox.information(self,'Error Message','최대수요량을 가져오는중에 에러가 발생하였습니다.')
-            browser.quit()
-            return
+        #except :
+        #    QMessageBox.information(self,'Error Message','최대수요량을 가져오는중에 에러가 발생하였습니다.')
+        #    browser.quit()
+        #    return
 
         #==============================
         # 일간전력사용량을 다운로드
@@ -1346,10 +1352,22 @@ class MatplotlibWidget(QMainWindow):
             browser.find_element(By.XPATH,'//*[@id="kWh"]/a').click() #  일별사용량
             time.sleep(5)
             
-            # 2.6 페이지 소스를 가져온다.
+
+            # ======================================
+            #    일간전력사용량 데이터 테이블 찾기
+            # ======================================
+            # 1) 브라우져를 스크래핑하여 html 변수에 저장
             html = browser.page_source
-            # 2.7 HTML 테이블을 판다스 데이터프레임으로 변환한다.
+            # 2) 스크래핑한 데이터를 parsing한다.
             data = pd.read_html(html, header=0)
+            # 3) 일간전력사용량 데이터를 찾는다.
+            daily_power_data = None
+            for i in range(0,len(data)) :
+                #print("data_1",len(data[i]))
+                if len(data[i]) > 10 :
+                    daily_power_data = data[i]
+            #print(max_power_data)
+            # ======================================
 
             #print("data_1",data[1])
             #print("data_2",data[2])
@@ -1359,14 +1377,14 @@ class MatplotlibWidget(QMainWindow):
             # 2.8 추출한 대이터를 정렬한다.
             # 20250923 홈페이지가 변경되어 리그트[3]이 [4]로 변경됨
             if (m_i == 1) :
-                data_15_day_raw = data[4]
+                data_15_day_raw = daily_power_data
                 data_15_day_1 =data_15_day_raw.iloc[:,[1]]
                 data_15_day_1.columns = ['peak'] 
                 data_15_day_2 = data_15_day_raw.iloc[:,[5]]
                 data_15_day_2.columns = ['peak'] 
                 data_day = pd.concat([data_15_day_1, data_15_day_2], axis=0, ignore_index = True)
             else :
-                data_15_day_raw = data[4]
+                data_15_day_raw = daily_power_data
                 data_15_day_1 =data_15_day_raw.iloc[:,[1]]
                 data_15_day_1.columns = ['peak'] 
                 data_15_day_2 = data_15_day_raw.iloc[:,[5]]
@@ -1450,15 +1468,26 @@ class MatplotlibWidget(QMainWindow):
         # 브라우져가 작동할 시간을 강제적으로 5초정도 준다.
         time.sleep(5)
 
+
+        # ======================================
+        #    월별사용요금 데이터 테이블 찾기
+        # ======================================
+        # 1) 브라우져를 스크래핑하여 html 변수에 저장
         html = browser.page_source
+        # 2) 스크래핑한 데이터를 parsing한다.
         data = pd.read_html(html, header=0)
-        #print("data_1",data[1])
-        #print("data_2",data[2])
-        #print("data_3",data[3])
-        #print("data_4",data[4])
+        
+        # 3) 월별사용요금량 데이터를 찾는다.
+        daily_power_data = None
+        for i in range(0,len(data)) :
+            #print("data_1",len(data[i]))
+            if len(data[i]) > 10 and daily_power_data is None:
+                daily_power_data = data[i]
+        #print(daily_power_data)
+        # ======================================
 
         # 추출한 대이터를 정렬한다. 
-        data_month_price_raw = data[3]
+        data_month_price_raw = daily_power_data
         data_mprice = data_month_price_raw
         
         # 3. 스크래핑한데이터를 정리(Data Mining)한다.
