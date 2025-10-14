@@ -47,6 +47,7 @@ import urllib.parse
 import pandas as pd
 import re
 import time
+from datetime import date
 from selenium.webdriver.common.by import By
 
 from PyQt5.QtWidgets import QHeaderView
@@ -339,7 +340,7 @@ class MatplotlibWidget(QMainWindow):
         article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         article.paragraph_format.line_spacing = 1.1
         article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('  4) 계약용량 : ' + contract_capa_rpt + ' kW')
+        article_s = article.add_run('  4) 계약용량 : ' + str(contract_capa_rpt) + ' kW')
         article_s.bold = False
         article_s.font.name = 'NanumGothicCoding'
         article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
@@ -349,118 +350,23 @@ class MatplotlibWidget(QMainWindow):
         article = doc.add_paragraph()
         article_s = article.add_run(' ')
 
-
-        # 2) 전력현황
+        # 2) 수전단가검토
         article = doc.add_paragraph()
         article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         article.paragraph_format.line_spacing = 1.1
         article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('2. 전력현황 분석 ' +'(' + str(search_year_rpt) + '년도)')
-        article_s.bold = False
-        article_s.font.name = 'NanumGothicCoding'
-        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
-        article_s.font.size = Pt(10)   
-        # 저장한 그래프를 불러온다.
-        now_dir = self.root_dir
-        file_path = now_dir+"/data/power_chart.png"
-        doc.add_picture(file_path, width=Cm(17), height=Cm(8))
-
-        # 2.1) 전력사용 현황 
-        article = doc.add_paragraph()
-        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-        article.paragraph_format.line_spacing = 1.1
-        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('  2.1 전력 사용현황')
+        article_s = article.add_run('2. 수전단가 검토' )
         article_s.bold = False
         article_s.font.name = 'NanumGothicCoding'
         article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
         article_s.font.size = Pt(10) 
 
-        # 2.1-1) 피크전력 
+        # 2.1) 계절별 발전단가 
         article = doc.add_paragraph()
         article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         article.paragraph_format.line_spacing = 1.1
         article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('    1) 최대수요전력 : ' + str(peak_power_rpt) + ' kW')
-        article_s.bold = False
-        article_s.font.name = 'NanumGothicCoding'
-        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
-        article_s.font.size = Pt(10) 
-
-        # 2.1-2) 요금적용전력 
-        article = doc.add_paragraph()
-        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-        article.paragraph_format.line_spacing = 1.1
-        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('    2) 요금적용전력 : ' + str(self.app_peak_power) + ' kW')
-        article_s.bold = False
-        article_s.font.name = 'NanumGothicCoding'
-        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
-        article_s.font.size = Pt(10) 
-
-        # 2.1-3) 평균수요 
-        article = doc.add_paragraph()
-        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-        article.paragraph_format.line_spacing = 1.1
-        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('    3) 평균소요전력 : ' + str(average_power_rpt) + ' kW')
-        article_s.bold = False
-        article_s.font.name = 'NanumGothicCoding'
-        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
-        article_s.font.size = Pt(10) 
-
-        # 2.1-4) 최소기본 
-        article = doc.add_paragraph()
-        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-        article.paragraph_format.line_spacing = 1.1
-        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('    4) 최소기본전력 : ' + str(min_power_rpt) + ' kW')
-        article_s.bold = False
-        article_s.font.name = 'NanumGothicCoding'
-        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
-        article_s.font.size = Pt(10) 
-
-        # 2.2) 발전가능량
-        article = doc.add_paragraph()
-        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-        article.paragraph_format.line_spacing = 1.1
-        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('  2.2 발전가능량')
-        article_s.bold = False
-        article_s.font.name = 'NanumGothicCoding'
-        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
-        article_s.font.size = Pt(10) 
-
-        # 2.1-1) 발전가능량 분석
-        article = doc.add_paragraph()
-        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-        article.paragraph_format.line_spacing = 1.1
-        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('    1) 발전가능량 : ' + str(gen_power_rpt) + ' kW')
-        article_s.bold = False
-        article_s.font.name = 'NanumGothicCoding'
-        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
-        article_s.font.size = Pt(10)
-
-        doc.add_page_break()  # 여기서 페이지가 나뉩니다
-
-        # 3) 단가검토
-        article = doc.add_paragraph()
-        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-        article.paragraph_format.line_spacing = 1.1
-        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('3. 단가검토' )
-        article_s.bold = False
-        article_s.font.name = 'NanumGothicCoding'
-        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
-        article_s.font.size = Pt(10) 
-
-        # 3.1) 계절별 발전단가 
-        article = doc.add_paragraph()
-        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-        article.paragraph_format.line_spacing = 1.1
-        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('3.1 계절별 발전단가 ')
+        article_s = article.add_run('2.1 계절별 전력단가 ( '+ str(date.today()) +"기준 )")
         article_s.bold = False
         article_s.font.name = 'NanumGothicCoding'
         article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
@@ -538,12 +444,108 @@ class MatplotlibWidget(QMainWindow):
         article = doc.add_paragraph()
         article_s = article.add_run(' ')
 
+
+        # 3) 전력사용 현황 분석
+        article = doc.add_paragraph()
+        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        article.paragraph_format.line_spacing = 1.1
+        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
+        article_s = article.add_run('3. 전력사용현황 분석 ' +'(' + str(search_year_rpt) + '년도)')
+        article_s.bold = False
+        article_s.font.name = 'NanumGothicCoding'
+        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
+        article_s.font.size = Pt(10)   
+        # 저장한 그래프를 불러온다.
+        now_dir = self.root_dir
+        file_path = now_dir+"/data/power_chart.png"
+        doc.add_picture(file_path, width=Cm(17), height=Cm(8))
+
+        doc.add_page_break()  # 여기서 페이지가 나뉩니다
+
+
+        # 3.1) 전력사용 현황 
+        article = doc.add_paragraph()
+        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        article.paragraph_format.line_spacing = 1.1
+        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
+        article_s = article.add_run('  3.1 전력 사용현황')
+        article_s.bold = False
+        article_s.font.name = 'NanumGothicCoding'
+        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
+        article_s.font.size = Pt(10) 
+
+        # 3.1-1) 피크전력 
+        article = doc.add_paragraph()
+        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        article.paragraph_format.line_spacing = 1.1
+        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
+        article_s = article.add_run('    1) 최대수요전력 : ' + str(peak_power_rpt) + ' kW')
+        article_s.bold = False
+        article_s.font.name = 'NanumGothicCoding'
+        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
+        article_s.font.size = Pt(10) 
+
+        # 3.1-2) 요금적용전력 
+        article = doc.add_paragraph()
+        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        article.paragraph_format.line_spacing = 1.1
+        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
+        article_s = article.add_run('    2) 요금적용전력 : ' + str(self.app_peak_power) + ' kW')
+        article_s.bold = False
+        article_s.font.name = 'NanumGothicCoding'
+        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
+        article_s.font.size = Pt(10) 
+
+        # 3.1-3) 평균수요 
+        article = doc.add_paragraph()
+        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        article.paragraph_format.line_spacing = 1.1
+        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
+        article_s = article.add_run('    3) 평균소요전력 : ' + str(average_power_rpt) + ' kW')
+        article_s.bold = False
+        article_s.font.name = 'NanumGothicCoding'
+        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
+        article_s.font.size = Pt(10) 
+
+        # 3.1-4) 최소기본 
+        article = doc.add_paragraph()
+        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        article.paragraph_format.line_spacing = 1.1
+        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
+        article_s = article.add_run('    4) 최소기본전력 : ' + str(min_power_rpt) + ' kW')
+        article_s.bold = False
+        article_s.font.name = 'NanumGothicCoding'
+        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
+        article_s.font.size = Pt(10) 
+
+        # 3.2) Peak 절감 가능량
+        article = doc.add_paragraph()
+        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        article.paragraph_format.line_spacing = 1.1
+        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
+        article_s = article.add_run('  3.2 Peak 절감 가능량')
+        article_s.bold = False
+        article_s.font.name = 'NanumGothicCoding'
+        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
+        article_s.font.size = Pt(10) 
+
+        # 2.1-1) 발전가능량 분석
+        article = doc.add_paragraph()
+        article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        article.paragraph_format.line_spacing = 1.1
+        article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
+        article_s = article.add_run('    1) 절감 가능량 : ' + str(gen_power_rpt) + ' kW')
+        article_s.bold = False
+        article_s.font.name = 'NanumGothicCoding'
+        article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
+        article_s.font.size = Pt(10)
+
         # 3.1) 계절별 발전단가 
         article = doc.add_paragraph()
         article.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
         article.paragraph_format.line_spacing = 1.1
         article.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY 
-        article_s = article.add_run('3.2 월별 사용요금 분석')
+        article_s = article.add_run('  3.3 월별 사용요금 분석 '+'(' + str(search_year_rpt) + '년도)')
         article_s.bold = False
         article_s.font.name = 'NanumGothicCoding'
         article_s._element.rPr.rFonts.set(qn('w:eastAsia'), 'NanumGothicCoding')
@@ -678,7 +680,6 @@ class MatplotlibWidget(QMainWindow):
         self.price_table.item(0, 0).setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
 
 
-
     def open_power_data(self):
         # [함수설명]
         # CSV데이터 형대로 저장된 Power Planner의 데이터를 불러와서 CRT에 뿌려줍니다.
@@ -722,7 +723,7 @@ class MatplotlibWidget(QMainWindow):
         self.contract_kind = contract_kind_1
         #print(contract_kind_1)
         contract_capa_1 = user_data_df.iloc[0:1,5:6].values[0][0]     # 계약용량
-        self.contract_capa = contract_capa_1
+        self.contract_capa = float(contract_capa_1[:-2])
         #print(contract_capa_1)
         search_year_1 = user_data_df.iloc[0:1,6:7].values[0][0]       # 검색년도
         self.search_year = search_year_1
@@ -849,11 +850,25 @@ class MatplotlibWidget(QMainWindow):
 
         # 5. 발전가능량 계산
         # 5.1 계약전력 추출
-        max_power = float(contract_capa[:-2])
+        max_power = float(contract_capa)
         # 5.2 발저가능량 계산 (계약전력의 30%)
-        self.app_peak_power = monthly_price_df['요금적용전력(kW)'].iloc[-1]
+        #print("요금적용",monthly_price_df)
+        # 멘뒤의 총계는 버린다.
+        df_trimmed = monthly_price_df.iloc[:-1]
+        # 0이 아닌값만 추출한다.
+        non_zero_mask = df_trimmed['요금적용전력(kW)'][::-1] != 0
+        # 추출된 값중 맨 뒷의 값을 가져온다.
+        self.app_peak_power = df_trimmed['요금적용전력(kW)'][::-1][non_zero_mask].iloc[0]
+        #print("app power",self.app_peak_power )
         
-        exp_gen = self.app_peak_power - max_power*0.3
+        
+        #self.app_peak_power = monthly_price_df['요금적용전력(kW)'].iloc[-2]
+        #print("peak",self.app_peak_power)
+        
+        # 피크절감 가능량이 0보다 적으면 0
+        exp_gen = float(self.app_peak_power - max_power*0.3)
+        if exp_gen < 0.0 :
+            exp_gen = 0.0
 
 
 
@@ -896,11 +911,13 @@ class MatplotlibWidget(QMainWindow):
 
         # 2. 메인화면 우측에 년간 전력사용현황 입력
         # 2.1 평균값을 계산하기 위하여 기술통계값을 계산
-        desc=data_pday_graph.describe()
+        #desc=data_pday_graph.describe()
+        desc=data_pday_graph[data_pday_graph != 0].describe() # 0이 아닌값만 통계값으로 계산
+
         #print(desc)
         # 2.2 오른쪽 년간 전력사용현황에 값을 입력
         self.contract_kind_scr.setText(str(contract_kind))
-        self.contract_capa_scr.setText(str(contract_capa[0:-2]))
+        self.contract_capa_scr.setText(str(contract_capa))
         self.peak_power_scr.setText(str(round(data_pday_graph.max(),1)))
         self.app_power_scr.setText(str(round(self.app_peak_power,1)))
         self.average_power_scr.setText(str(round(desc[1],1)))
@@ -936,7 +953,7 @@ class MatplotlibWidget(QMainWindow):
         # 3.1 일별 최대수요 그래프 데이터 정리
         data_pday_graph = data_pday_graph.reset_index(drop=True)
         # 3.2 주석 값 설정
-        exp_gen_text = "발전가능용량 : " + str(round(exp_gen,0))+"kW"
+        exp_gen_text = "Peak절감가능량 : " + str(round(exp_gen,0))+"kW"
         year_text = "기준년도 : " + str(search_year)+"년"
         c_name_text = "고객명 : " + customer_name
         power_level = "계약종별 : " + contract_kind
@@ -1494,16 +1511,21 @@ class MatplotlibWidget(QMainWindow):
         #print(data_mprice)
         data_mprice.columns = ["년/월","계약전력(kW)","요금적용전력(kW)","사용전력량(kWh)","day","pf","pf1","전기요금(원)","others"]               # 컬럼명을 1~12월로 변경
         data_mprice.index = [1,2,3,4,5,6,7,8,9,10,11,12]  # 인덱스를 1~12월로 변경
-        data_mprice = data_mprice.replace('-','NaN')                       # - 을 NaN으로 변경
+        data_mprice = data_mprice.replace('-',np.nan)                       # - 을 NaN으로 변경
         data_mprice = data_mprice.apply(pd.to_numeric,errors='ignore')     # 숫자가 아닌 부분은 무시
         data_mprice = data_mprice.fillna(0)                                # NaN 부분을 0으로 변경
         data_mprice = data_mprice.drop(['day', 'pf', 'pf1','others'], axis=1)
-        data_mprice['unit_price'] = (data_mprice['전기요금(원)'] / data_mprice['사용전력량(kWh)']).round(1)
+        #print(data_mprice)   
+        mask = data_mprice['사용전력량(kWh)'] > 0.0
+        data_mprice.loc[mask, 'unit_price'] = (data_mprice.loc[mask, '전기요금(원)'] / data_mprice.loc[mask, '사용전력량(kWh)']).round(1)
+        #print(self.search_year.text())
+        #print(data_mprice)
+        mask_year = ~data_mprice['년/월'].astype(str).str.contains(str(self.search_year.text()))
+        data_mprice.loc[mask_year, ['요금적용전력(kW)', '사용전력량(kWh)', '전기요금(원)','unit_price']] = 0.0
         data_mprice['년/월'] = data_mprice['년/월'].apply(lambda x: x[5:] if '년' in x and len(x) > 5 else x)
         total_usage = data_mprice['사용전력량(kWh)'].sum()
         total_bill = data_mprice['전기요금(원)'].sum()
-        average_unit_price = data_mprice['unit_price'].mean().round(1)
-
+        average_unit_price =round(total_bill/total_usage,1)
 
         new_row = {
             '년/월': '총계',
